@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Archivos de bitácora y gestión interna
+agent.md
+task.md
+memory.md
+instruction/

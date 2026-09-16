@@ -2,8 +2,8 @@
 
 ## Estado General del Proyecto
 - **Proyecto:** Rick and Morty Explorer (Propuesta 4 - Conquer Blocks Proyecto Final JS)
-- **Fase Actual:** **Fase 4 - Navegación y Paginación Dinámica**
-- **Estado de Aprobación:** 🟡 **Fase 3 completada. Esperando confirmación explícita del usuario para iniciar la Fase 4**
+- **Fase Actual:** **Fase 5 - Modal de Detalle Extendido y Episodios**
+- **Estado de Aprobación:** 🟡 **Fase 4 completada. Esperando confirmación explícita del usuario para iniciar la Fase 5**
 
 ---
 
@@ -28,31 +28,36 @@
 - [x] **3.3. Experiencia de Usuario y Feedback:** Loader activo durante la búsqueda y mensaje "Sin vida detectada" si no hay coincidencias.
 - [x] **3.4. Verificación y Sincronización:** Pruebas unitarias de debounce y filtros combinados aprobadas; cambios sincronizados en GitHub (`aced0ef`).
 
+### [x] Fase 4: Navegación y Paginación Dinámica
+- [x] **4.1. Eventos de Paginación:** Botones Anterior/Siguiente vinculados con validación de límites y guarda anti-concurrencia (`state.isLoading`).
+- [x] **4.2. Preservación del Estado:** Filtros de búsqueda, estado y género se conservan íntegramente al cambiar de página.
+- [x] **4.3. Scroll Suave:** Al cargar cada nueva página, la vista se desplaza automáticamente al inicio del grid.
+- [x] **4.4. Verificación:** Tests de navegación, límites (páginas 1 y 42) y solapamiento de IDs entre páginas aprobados. Push a GitHub (`9717b9c`).
+
 ---
 
-## Detalle Específico de la Próxima Fase (Fase 4)
+## Detalle Específico de la Próxima Fase (Fase 5)
 
 ### Objetivo
-Completar la navegación y paginación reactiva para recorrer las múltiples páginas de resultados de la API de Rick and Morty, asegurando que los filtros y el término de búsqueda actual se conserven intactos al navegar, previniendo dobles clics y desplazando la vista suavemente al inicio de los resultados (*Scroll to Top*).
+Implementar el modal de detalle accesible usando el elemento `<dialog>` nativo de HTML5, mostrando la información extendida del personaje (imagen ampliada, estado, especie, género, origen, última localización) y la lista de episodios en los que aparece (obtenidos dinámicamente de la API mediante `Promise.all()` para peticiones en paralelo).
 
-### Subtareas de la Fase 4
-- [ ] **4.1. Lógica de Paginación en `src/main.js`:**
-  - Vincular eventos de clic a los botones `#prev-page-btn` y `#next-page-btn`.
-  - Incrementar o decrementar `state.currentPage` validando los límites (`1 <= page <= totalPages`).
-  - Invocar `loadCharacters(nuevaPagina)`.
-- [ ] **4.2. Preservación del Estado de Búsqueda:**
-  - Garantizar que si el usuario buscó "Rick" con filtro "Alive", al pulsar "Siguiente" se consulte `page=2&name=Rick&status=alive`.
-- [ ] **4.3. Experiencia de Usuario y Scroll Suave:**
-  - Al completar la carga de una nueva página, desplazar suavemente la ventana hacia la parte superior del grid de personajes (`window.scrollTo({ top: ..., behavior: 'smooth' })`).
-  - Prevenir múltiples solicitudes concurrentes deshabilitando los botones mientras `state.isLoading === true`.
-- [ ] **4.4. Verificación y Despliegue:**
-  - Probar navegación hacia adelante, hacia atrás y en los límites (página 1 y última página).
-  - Validar build limpio (`npm run build`) y sincronizar en GitHub.
+### Subtareas de la Fase 5
+- [ ] **5.1. Módulo del Modal (`src/js/components/Modal.js`):**
+  - Crear función `openModal(character)` que inyecte el HTML del detalle en `#modal-body` y llame a `dialogElement.showModal()`.
+  - Crear función `closeModal()` que llame a `dialogElement.close()`.
+  - Implementar función pura `renderModalContent(character, episodes)` que genere el marcado del modal con todos los datos del personaje y los badges de episodios.
+- [ ] **5.2. Carga Dinámica de Episodios en `src/js/services/api.js`:**
+  - Añadir función `fetchEpisodesByUrls(urls)` que reciba el array de URLs de episodios de un personaje y ejecute las peticiones en paralelo con `Promise.all()`.
+- [ ] **5.3. Delegación de Eventos en `src/main.js`:**
+  - Implementar Event Delegation sobre `#characters-grid` para detectar clics en botones con `data-action="view-details"`.
+  - Mostrar el loader dentro del modal mientras se consultan los episodios.
+  - Vincular el cierre mediante el botón `#close-modal-btn`, clic en el backdrop del `<dialog>` y la tecla `Escape`.
+- [ ] **5.4. Verificación y Despliegue:**
+  - Comprobar apertura y cierre del modal en múltiples personajes.
+  - Validar que los episodios cargan correctamente para personajes con muchos y pocos episodios.
+  - Build limpio y push a GitHub.
 
 ---
-
-### [ ] Fase 5: Modal de Detalle Extendido y Episodios
-- [ ] Diálogo modal accesible con fetch de episodios y datos adicionales al hacer clic en "Ver detalles".
 
 ### [ ] Fase 6: Sistema de Favoritos con Persistencia (`localStorage`)
 - [ ] Persistencia de favoritos en `localStorage` y filtro exclusivo en pestaña Favoritos.

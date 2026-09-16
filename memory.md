@@ -6,58 +6,59 @@
 - **Compilador y Empaquetador:** Vite v8.3.0 y Sass v1.104.1.
 - **Configuración de Despliegue y Control de Versiones:**
   - `base: './'` en `vite.config.js` para rutas relativas en GitHub Pages.
-  - Repositorio remoto sincronizado: `https://github.com/javieresquivelt-ux/Entregable_ProyectoFinalJS.git` (rama `main`).
+  - Repositorio remoto: `https://github.com/javieresquivelt-ux/Entregable_ProyectoFinalJS.git` (rama `main`).
 
 ---
 
 ### 2. Fase 1: Cimientos y Maquetación Base (Completada)
-- Estructura Sass modular con tokens de diseño temático.
-- Maquetación semántica en `index.html`.
-- Build validado con 0 errores y 0 warnings.
-
----
+- Estructura Sass modular con tokens de diseño temático y maquetación semántica. Build sin warnings.
 
 ### 3. Fase 2: Servicio API y Renderizado Inicial (Completada)
-- Módulo `src/js/services/api.js` con `fetchCharacters` e intercepción defensiva del 404.
-- Componentes `CharacterCard.js` y `StateFeedback.js`.
-- Carga de la página 1 en `DOMContentLoaded`.
-- Pruebas unitarias aprobadas y sincronización en GitHub.
-
----
+- Módulo `api.js` con intercepción del 404, componentes `CharacterCard.js` y `StateFeedback.js`. Pruebas aprobadas.
 
 ### 4. Fase 3: Búsqueda Reactiva y Filtros Combinados (Completada)
-- **Módulo `src/js/utils/debounce.js`:**
-  - Implementación educativa del patrón debounce utilizando *closures* y temporizadores de la Web API (`setTimeout`/`clearTimeout`).
-  - Prueba automatizada: se lanzaron 3 invocaciones seguidas y se verificó que solo 1 llamada se ejecutó tras expirar el retraso de 50ms.
-- **Orquestación en `src/main.js`:**
-  - Vinculación del evento `input` en `#search-input` mediante debounce de 350ms.
-  - Vinculación del evento `change` en selectores `#status-filter` y `#gender-filter`.
-  - Prueba de consumo combinada: búsqueda "Rick" + estado "alive" + género "male" devolvió 20 personajes coincidentes en vivo desde la API oficial.
-- **Sincronización:** Commit y push completado hacia GitHub (`aced0ef`).
+- `debounce.js` con prueba automática (3 llamadas → 1 ejecución). Filtros `status` y `gender` vinculados reactivamente en `main.js`.
 
 ---
 
-### 5. Razonamiento Técnico y Pedagógico para la Fase 4: Navegación y Paginación
-
-#### A. Mantenimiento del Estado Compuesto
-- En aplicaciones interactivas, la paginación no puede existir de forma aislada a los filtros.
-- Si el usuario busca "Morty" con estado "alive", al hacer clic en "Página siguiente", la petición HTTP resultante debe preservar dichos parámetros:
-  `?page=2&name=Morty&status=alive`
-- Gracias a la arquitectura centralizada en el objeto `state` (`state.currentPage`, `state.filters`), la función `loadCharacters(page)` reutiliza siempre los valores activos de los filtros, garantizando consistencia absoluta sin necesidad de almacenar variables dispersas en el DOM.
-
-#### B. Prevención de Concurrencia y Doble Envío
-- Durante el tiempo que toma resolver la petición a la red (`state.isLoading === true`), los botones `#prev-page-btn` y `#next-page-btn` deben deshabilitarse (`disabled = true`) para evitar que clics repetidos o accidentales lancen peticiones redundantes.
-- Los botones también deben deshabilitarse automáticamente en los límites extremos:
-  - Botón "Anterior" deshabilitado si `currentPage <= 1`.
-  - Botón "Siguiente" deshabilitado si `currentPage >= totalPages`.
-
-#### C. Usabilidad y Scroll Restaurado
-- Al cambiar de página, el usuario usualmente se encuentra al final de la página (cerca de los controles de paginación). Para mejorar la ergonomía de navegación, la vista se desplazará suavemente hacia el inicio del grid de personajes.
+### 5. Fase 4: Navegación y Paginación Dinámica (Completada)
+- **Decisiones técnicas aplicadas:**
+  - **Guarda Anti-Concurrencia:** Se añadió `if (state.isLoading) return;` al inicio de `loadCharacters()` para bloquear completamente nuevas peticiones mientras hay una pendiente, evitando el problema de _Race Conditions_ en paginación rápida.
+  - **Validación Doble de Límites:** La lógica de los botones de paginación aplica dos capas de seguridad: el atributo `disabled` del DOM (previene clics del usuario) y una guarda JavaScript (`if (nextPage <= state.totalPages)`) en el handler del evento, resistente a activaciones programáticas.
+  - **Scroll Ergonómico:** La función `scrollToGrid()` usa `getBoundingClientRect()` para calcular la posición real del grid en el documento y aplica un offset de 24px de margen superior antes de ejecutar `window.scrollTo({ behavior: 'smooth' })`.
+- **Resultados de las pruebas:**
+  - Página 1 (alive): 20 personajes, 22 páginas totales. ✅
+  - Página 2 (alive): 20 personajes diferentes (0 IDs solapados con Página 1). ✅
+  - Límite inferior (Página 1): `info.prev === null`. ✅
+  - Límite superior (Página 42): `info.next === null`. ✅
+- **Commit:** `9717b9c` sincronizado en GitHub.
 
 ---
 
-### 6. Estado Actual
-- **Fase 3 completada y sincronizada en GitHub.**
-- **Plan de la Fase 4 detallado en `task.md`.**
-- **Razonamiento documentado en `memory.md`.**
-- **En pausa a la espera de la confirmación explícita del usuario para iniciar la ejecución de la Fase 4.**
+### 6. Razonamiento Técnico y Pedagógico para la Fase 5: Modal y Episodios
+
+#### A. El Elemento `<dialog>` Nativo de HTML5
+- La API del elemento `<dialog>` ofrece comportamientos de accesibilidad gratuitos que son muy difíciles de replicar manualmente:
+  - `dialogElement.showModal()`: Abre el diálogo como modal bloqueante, captura el foco automáticamente y gestiona el atributo ARIA `aria-modal="true"`.
+  - `dialogElement.close()`: Cierra y limpia el estado automáticamente.
+  - El pseudoelemento `::backdrop` permite estilizar el fondo oscuro nativo.
+  - La tecla `Escape` cierra el diálogo de forma nativa sin código JavaScript adicional.
+- **Por qué es pedagógicamente valioso:** Demuestra cómo las APIs nativas del navegador pueden reemplazar librerías pesadas de modales manteniendo plena accesibilidad.
+
+#### B. `Promise.all()` para Peticiones de Episodios en Paralelo
+- Cada personaje tiene un array de URLs de episodios (ej. Rick Sanchez tiene 51 episodios).
+- Si se consultaran en serie (`for...of` con `await`), 51 peticiones secuenciales tomarían muchos segundos.
+- **Solución técnica:** `Promise.all(urls.map(url => fetch(url)))` lanza todas las peticiones en paralelo y resuelve cuando todas completan, reduciendo el tiempo de espera al de la petición más lenta.
+- **Limitación aplicada:** Para no saturar la API pública, se procesarán como máximo las primeras 20 URLs del array de episodios con `.slice(0, 20)`.
+
+#### C. Patrón de Event Delegation para el Grid de Personajes
+- En lugar de asignar un listener individual a cada botón "Ver detalles" de las tarjetas (que pueden ser hasta 20 por página y se recrean en cada carga), se asigna **un único listener** al contenedor padre `#characters-grid`.
+- Al hacer clic dentro del grid, el evento "burbujea" (*event bubbling*) hasta el contenedor. Ahí verificamos `event.target.closest('[data-action="view-details"]')` para identificar el botón exacto y extraer el `data-id` del personaje.
+- **Ventaja pedagógica:** Menor uso de memoria, menor riesgo de listeners duplicados y código más simple al reemplazar el contenido del grid.
+
+---
+
+### 7. Estado Actual
+- **Fase 4 completada y sincronizada en GitHub.**
+- **Plan de la Fase 5 detallado en `task.md`.**
+- **En pausa a la espera de la confirmación explícita del usuario para iniciar la Fase 5.**

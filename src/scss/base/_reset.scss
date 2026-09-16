@@ -55,6 +55,13 @@ select {
   font-size: inherit;
 }
 
+// Accesibilidad: Indicador de foco visible para navegación por teclado (WCAG 2.4.7)
+:focus-visible {
+  outline: 2px solid var.$color-portal-cyan;
+  outline-offset: 3px;
+  border-radius: var.$border-radius-sm;
+}
+
 // Scrollbar personalizada temática
 ::-webkit-scrollbar {
   width: 8px;

@@ -79,15 +79,33 @@
 
 ---
 
-### 7. Razonamiento Técnico para la Fase 7: Pulido Final y Despliegue
+### 7. Fase 7: Pulido Final, Documentación Didáctica y Despliegue (Completada)
 
-- **Revisión Final de Accesibilidad:** Se debe comprobar el correcto uso de `aria-label`, contraste, estados `:focus-visible`.
-- **Explicaciones didácticas:** El proyecto está enfocado en la educación. Todos los patrones, como funciones puras, inyección de dependencias (`Modal.js`), delegación de eventos (`main.js`), debounce (`debounce.js`), y uso de APIs nativas (`<dialog>`, `Promise.all()`, `localStorage`) tienen sus comentarios respectivos.
-- **Despliegue:** Se verificará que `vite.config.js` tenga `base: './'` de forma correcta y limpia para que las rutas relativas en GitHub Pages no den errores 404 al buscar CSS o JS.
+**Acciones y Decisiones Técnicas Aplicadas:**
+
+1. **Accesibilidad de Teclado y Contraste (WCAG 2.4.7):**
+   - Incorporado estilo global `:focus-visible` en `_reset.scss` utilizando el cian temático de alto contraste (`outline: 2px solid $color-portal-cyan; outline-offset: 3px`).
+   - Todos los elementos interactivos (botones de navegación, selector de pestañas, inputs de búsqueda y filtros, botón de cierre del modal y tarjetas) ofrecen una respuesta visual clara al navegar mediante `Tab` y `Shift+Tab`.
+   - Elementos semánticos auditados: `aria-live="polite"`, `role="tablist"`, `role="tab"`, `aria-selected`, `aria-label` descriptivos dinámicos en los botones de favoritos ("Agregar a [Nombre] a favoritos" vs "Quitar a [Nombre] de favoritos").
+
+2. **Documentación Didáctica de Código:**
+   - Verificado que cada módulo contenga JSDoc exhaustivo y comentarios pedagógicos sobre patrones de diseño:
+     - `debounce.js`: Closures, timers de Web API y preservación de contexto (`callback.apply(this, args)`).
+     - `api.js`: Promesas paralelas con `Promise.all()`, defensiva ante HTTP 404 y `URLSearchParams`.
+     - `favorites.js`: Encapsulamiento del almacenamiento en navegador, estructura de datos `Map` para búsqueda $O(1)$, serialización JSON a prueba de excepciones.
+     - `Modal.js`: API nativa HTML5 `<dialog>` con `showModal()`, focus trapping y cierre por backdrop. Inversión de dependencias con `fetchEpisodes`.
+     - `CharacterCard.js`: Funciones puras para renderizado, `data-action` y `data-id` para Event Delegation.
+     - `main.js`: Single Source of Truth (`state`), actualización quirúrgica del DOM sin reflow general de grilla, y control de pestañas reactivo.
+   - Creación de `README.md` exhaustivo de nivel portafolio con arquitectura de directorios, instrucciones de instalación local y guía de despliegue.
+
+3. **Configuración y Optimización para Producción:**
+   - `vite.config.js` confirmado con `base: './'`, lo que garantiza que todos los assets en `dist/index.html` se vinculen de forma relativa (`./assets/...`), evitando problemas de rutas 404 al desplegar en GitHub Pages.
+   - Flujo de GitHub Actions `.github/workflows/deploy.yml` agregado para automatizar la integración y despliegue continuo (CI/CD) directo a GitHub Pages tras cada push a la rama `main`.
+   - Ejecución de `npm run build`: 11 módulos transformados, 0 errores, 0 advertencias, tiempo de compilación óptimo (~344ms).
 
 ---
 
-### 8. Estado Actual
-- **Fase 6 completada y sincronizada en GitHub.**
-- **Plan de la Fase 7 detallado en `task.md`.**
-- **En pausa a la espera de la confirmación explícita del usuario para iniciar la Fase 7.**
+### 8. Estado Actual del Proyecto
+- 🟢 **Proyecto finalizado al 100% (Fases 1 a 7 completadas y verificadas).**
+- Todos los cambios documentados en `task.md` y `memory.md`.
+- Repositorio y rama `main` listos para entrega y revisión.

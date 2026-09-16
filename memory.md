@@ -5,57 +5,59 @@
 ### 1. Diagnóstico del Entorno Actual y Código Heredado
 - **Compilador y Empaquetador:** Vite v8.3.0 y Sass v1.104.1.
 - **Configuración de Despliegue y Control de Versiones:**
-  - `base: './'` en `vite.config.js` para rutas relativas compatibles con GitHub Pages.
-  - Repositorio remoto: `https://github.com/javieresquivelt-ux/Entregable_ProyectoFinalJS.git` (rama `main`).
+  - `base: './'` en `vite.config.js` para rutas relativas en GitHub Pages.
+  - Repositorio remoto sincronizado: `https://github.com/javieresquivelt-ux/Entregable_ProyectoFinalJS.git` (rama `main`).
 
 ---
 
 ### 2. Fase 1: Cimientos y Maquetación Base (Completada)
-- Estructura Sass limpia y modular con paleta Rick and Morty.
-- Maquetación semántica en `index.html` con `<header>`, `<section>`, `<main>`, `<dialog>` y `<nav>`.
-- Build verificado sin advertencias.
+- Estructura Sass modular con tokens de diseño temático.
+- Maquetación semántica en `index.html`.
+- Build validado con 0 errores y 0 warnings.
 
 ---
 
 ### 3. Fase 2: Servicio API y Renderizado Inicial (Completada)
-- Módulo `src/js/services/api.js` con `fetchCharacters` y manejo defensivo del 404 (transformado en un array seguro `[]`).
-- Componentes `CharacterCard.js` y `StateFeedback.js` con soporte para badges e indicadores luminosos.
+- Módulo `src/js/services/api.js` con `fetchCharacters` e intercepción defensiva del 404.
+- Componentes `CharacterCard.js` y `StateFeedback.js`.
 - Carga de la página 1 en `DOMContentLoaded`.
-- Pruebas verificadas: 20 personajes recibidos, 42 páginas totales. Sincronizado en GitHub.
+- Pruebas unitarias aprobadas y sincronización en GitHub.
 
 ---
 
-### 4. Razonamiento Técnico y Pedagógico para la Fase 3: Búsqueda y Filtros Combinados
-
-#### A. El Patrón Debounce y el Event Loop de JavaScript
-- **Problema de Rendimiento y Experiencia:**
-  - Cuando un usuario escribe en un campo de texto, el evento `input` se dispara con cada pulsación de tecla.
-  - Si el usuario escribe la palabra "Morty" (5 letras), sin optimización se lanzarían 5 peticiones HTTP casi consecutivas:
-    `name=M` ➔ `name=Mo` ➔ `name=Mor` ➔ `name=Mort` ➔ `name=Morty`.
-  - Esto causa sobrecarga innecesaria en la API pública, consumo excesivo de datos móviles y el clásico problema de *Race Conditions* (Condición de Carrera): una petición anterior lenta podría resolverse después de la última y sobrescribir la pantalla con resultados desactualizados.
-- **Solución Pedagógica (Debounce):**
-  - Se implementa una función de orden superior (*Higher-Order Function*) que aprovecha los **Closures** (clausuras) de JavaScript.
-  - Guarda una variable interna `timeoutId`. Cada vez que el usuario presiona una tecla, cancela el temporizador anterior con `clearTimeout(timeoutId)` y crea uno nuevo con `setTimeout`.
-  - Solo cuando el usuario deja de tipear durante 350 milisegundos, la función de búsqueda se ejecuta efectivamente.
-
-#### B. Gestión Centralizada del Estado (Single Source of Truth)
-- En lugar de leer directamente los valores del DOM en cada función dispersa, el objeto `state.filters` almacena el estado unificado:
-  ```javascript
-  state.filters = {
-    name: 'Rick',
-    status: 'dead',
-    gender: 'male'
-  };
-  ```
-- Cualquier cambio en cualquiera de los tres controles actualiza esta estructura y llama a `loadCharacters(1)`, garantizando que todos los filtros activos se envíen simultáneamente al endpoint de la API.
-
-#### C. Reseteo de Paginación en Búsquedas
-- Si un usuario se encuentra en la página 15 del catálogo general y luego escribe "Summer", la búsqueda no debe consultar la página 15 de los resultados filtrados (la cual probablemente ni siquiera exista).
-- **Regla inquebrantable:** Toda nueva búsqueda o cambio de filtro debe reiniciar siempre el puntero de página a `1` (`state.currentPage = 1`).
+### 4. Fase 3: Búsqueda Reactiva y Filtros Combinados (Completada)
+- **Módulo `src/js/utils/debounce.js`:**
+  - Implementación educativa del patrón debounce utilizando *closures* y temporizadores de la Web API (`setTimeout`/`clearTimeout`).
+  - Prueba automatizada: se lanzaron 3 invocaciones seguidas y se verificó que solo 1 llamada se ejecutó tras expirar el retraso de 50ms.
+- **Orquestación en `src/main.js`:**
+  - Vinculación del evento `input` en `#search-input` mediante debounce de 350ms.
+  - Vinculación del evento `change` en selectores `#status-filter` y `#gender-filter`.
+  - Prueba de consumo combinada: búsqueda "Rick" + estado "alive" + género "male" devolvió 20 personajes coincidentes en vivo desde la API oficial.
+- **Sincronización:** Commit y push completado hacia GitHub (`aced0ef`).
 
 ---
 
-### 5. Estado Actual
-- **Plan de la Fase 3 detallado en `task.md`.**
+### 5. Razonamiento Técnico y Pedagógico para la Fase 4: Navegación y Paginación
+
+#### A. Mantenimiento del Estado Compuesto
+- En aplicaciones interactivas, la paginación no puede existir de forma aislada a los filtros.
+- Si el usuario busca "Morty" con estado "alive", al hacer clic en "Página siguiente", la petición HTTP resultante debe preservar dichos parámetros:
+  `?page=2&name=Morty&status=alive`
+- Gracias a la arquitectura centralizada en el objeto `state` (`state.currentPage`, `state.filters`), la función `loadCharacters(page)` reutiliza siempre los valores activos de los filtros, garantizando consistencia absoluta sin necesidad de almacenar variables dispersas en el DOM.
+
+#### B. Prevención de Concurrencia y Doble Envío
+- Durante el tiempo que toma resolver la petición a la red (`state.isLoading === true`), los botones `#prev-page-btn` y `#next-page-btn` deben deshabilitarse (`disabled = true`) para evitar que clics repetidos o accidentales lancen peticiones redundantes.
+- Los botones también deben deshabilitarse automáticamente en los límites extremos:
+  - Botón "Anterior" deshabilitado si `currentPage <= 1`.
+  - Botón "Siguiente" deshabilitado si `currentPage >= totalPages`.
+
+#### C. Usabilidad y Scroll Restaurado
+- Al cambiar de página, el usuario usualmente se encuentra al final de la página (cerca de los controles de paginación). Para mejorar la ergonomía de navegación, la vista se desplazará suavemente hacia el inicio del grid de personajes.
+
+---
+
+### 6. Estado Actual
+- **Fase 3 completada y sincronizada en GitHub.**
+- **Plan de la Fase 4 detallado en `task.md`.**
 - **Razonamiento documentado en `memory.md`.**
-- **En pausa a la espera de la confirmación explícita del usuario para iniciar la ejecución de la Fase 3.**
+- **En pausa a la espera de la confirmación explícita del usuario para iniciar la ejecución de la Fase 4.**

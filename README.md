@@ -1,6 +1,6 @@
 # 🪐 Rick and Morty Explorer
 
-> **Entregable 02 • Proyecto Final de JavaScript — Conquer Blocks**  
+> **Entregable • Proyecto Final de JavaScript — Conquer Blocks**  
 > Aplicación web interactiva desarrollada con **JavaScript Vanilla moderno (ES Modules)**, **Vite**, y **Sass modular (7-1 Pattern)**, consumiendo la API oficial de Rick and Morty.
 
 ---

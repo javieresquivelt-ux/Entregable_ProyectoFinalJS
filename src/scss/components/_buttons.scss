@@ -67,9 +67,20 @@
 
     &.is-favorite {
       color: var.$color-favorite-gold;
-      background: rgba(255, 193, 7, 0.15);
-      border-color: var.$color-favorite-gold;
-      box-shadow: 0 0 12px rgba(255, 193, 7, 0.4);
+      background: rgba(15, 17, 26, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1.5px solid var.$color-favorite-gold;
+      box-shadow:
+        0 0 0 1.5px rgba(0, 0, 0, 0.75),
+        0 4px 12px rgba(0, 0, 0, 0.5);
+      filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
+
+      &:hover {
+        transform: scale(1.15);
+        box-shadow:
+          0 0 0 1.5px rgba(0, 0, 0, 0.85),
+          0 0 14px rgba(255, 193, 7, 0.45);
+      }
     }
   }
 

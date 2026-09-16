@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Metadatos SEO y descriptivos -->
+  <title>Rick and Morty Explorer | Conquer Blocks JavaScript</title>
+  <meta name="description"
+    content="Explorador interactivo del multiverso de Rick and Morty con búsqueda, filtros, paginación y favoritos en localStorage." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Tipografías de Google Fonts: Inter (Cuerpo) y Orbitron (Títulos Sci-Fi) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@600;800;900&display=swap"
+    rel="stylesheet" />
+</head>
+
+<body>
+  <!-- ========================================================================= -->
+  <!-- 1. ENCABEZADO DE LA APLICACIÓN -->
+  <!-- ========================================================================= -->
+  <header class="app-header">
+    <div class="container">
+      <div class="app-header__badge">
+        <span>Conquer Blocks • Proyecto Final JS</span>
+      </div>
+      <h1 class="app-header__title">Rick and Morty Explorer</h1>
+      <p class="app-header__subtitle">
+        Explora personajes, dimensiones y episodios del multiverso de Rick and Morty en tiempo real.
+      </p>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- 2. PANEL DE CONTROLES: BÚSQUEDA Y FILTRADO COMBINADO -->
+  <!-- ========================================================================= -->
+  <section class="controls-section">
+    <div class="container">
+      <div class="controls-section__wrapper">
+        <!-- Barra de Búsqueda por Nombre -->
+        <div class="controls-section__search-box">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input type="search" id="search-input" placeholder="Buscar personaje por nombre (ej. Rick, Morty, Beth)..."
+            autocomplete="off" aria-label="Buscar personaje por nombre" />
+        </div>
+
+        <!-- Fila de Filtros y Selector de Pestaña -->
+        <div class="controls-section__filters">
+          <div class="controls-section__filters-group">
+            <!-- Filtro de Estado -->
+            <select id="status-filter" aria-label="Filtrar por estado">
+              <option value="">Todos los Estados</option>
+              <option value="alive">Vivo (Alive)</option>
+              <option value="dead">Muerto (Dead)</option>
+              <option value="unknown">Desconocido (Unknown)</option>
+            </select>
+
+            <!-- Filtro de Género -->
+            <select id="gender-filter" aria-label="Filtrar por género">
+              <option value="">Todos los Géneros</option>
+              <option value="female">Femenino (Female)</option>
+              <option value="male">Masculino (Male)</option>
+              <option value="genderless">Sin género (Genderless)</option>
+              <option value="unknown">Desconocido (Unknown)</option>
+            </select>
+          </div>
+
+          <!-- Pestañas: Todos vs Favoritos -->
+          <div class="controls-section__tabs" role="tablist">
+            <button id="tab-all" class="tab-btn tab-btn--active" role="tab" aria-selected="true">
+              🪐 Todos
+            </button>
+            <button id="tab-favs" class="tab-btn" role="tab" aria-selected="false">
+              ⭐ Favoritos (<span id="fav-count">0</span>)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 3. CONTENEDOR PRINCIPAL Y GRID DE PERSONAJES -->
+  <!-- ========================================================================= -->
+  <main class="main-content">
+    <div class="container">
+      <!-- Grid dinámico inyectado por JavaScript -->
+      <div id="characters-grid" class="characters-grid" aria-live="polite">
+        <!-- Aquí JavaScript renderizará las tarjetas o estados visuales -->
+      </div>
+    </div>
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- 4. CONTROLES DE PAGINACIÓN -->
+  <!-- ========================================================================= -->
+  <nav class="pagination-section" aria-label="Paginación de resultados">
+    <div class="pagination-section__wrapper" id="pagination-controls">
+      <button id="prev-page-btn" class="pagination-section__btn" aria-label="Página anterior" disabled>
+        &#8592;
+      </button>
+      <span class="pagination-section__info" id="page-info">
+        Página <span class="current-page">1</span>
+      </span>
+      <button id="next-page-btn" class="pagination-section__btn" aria-label="Página siguiente" disabled>
+        &#8594;
+      </button>
+    </div>
+  </nav>
+
+  <!-- ========================================================================= -->
+  <!-- 5. DIÁLOGO MODAL: DETALLE EXTENDIDO DE PERSONAJES Y EPISODIOS -->
+  <!-- ========================================================================= -->
+  <dialog id="character-modal" class="modal" aria-labelledby="modal-character-name">
+    <div class="modal__content" id="modal-content">
+      <button id="close-modal-btn" class="modal__close-btn" aria-label="Cerrar ventana de detalles">
+        &times;
+      </button>
+      <div id="modal-body">
+        <!-- Contenido generado dinámicamente al abrir el modal -->
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Script modular de Vite -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,74 @@
+// ==========================================================================
+// RESET Y ESTILOS BASE GLOBALES
+// ==========================================================================
+@use '../abstracts/variables' as var;
+
+// Reset global de márgenes y modelo de caja
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+// Estructura HTML y Body
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var.$color-bg-deep;
+  color: var.$color-text-primary;
+  font-family: var.$font-family-base;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 15% 15%, rgba(151, 206, 76, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(0, 181, 204, 0.05) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+// Reset de imágenes para evitar desbordes
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+// Reset de botones
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+// Reset de inputs y selects
+input,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+// Scrollbar personalizada temática
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var.$color-bg-deep;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2b3245;
+  border-radius: var.$border-radius-full;
+
+  &:hover {
+    background: var.$color-portal-green;
+  }
+}

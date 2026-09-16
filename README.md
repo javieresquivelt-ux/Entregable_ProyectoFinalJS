@@ -5,13 +5,6 @@
 
 ---
 
-## 🚀 Demo y Despliegue
-
-- **Repositorio:** [github.com/javieresquivelt-ux/Entregable_ProyectoFinalJS](https://github.com/javieresquivelt-ux/Entregable_ProyectoFinalJS)
-- **Live Demo (GitHub Pages):** [https://javieresquivelt-ux.github.io/Entregable_ProyectoFinalJS/](https://javieresquivelt-ux.github.io/Entregable_ProyectoFinalJS/)
-
----
-
 ## ✨ Características Principales
 
 1. **Exploración Dinámica de Personajes:**
@@ -53,9 +46,6 @@ El proyecto sigue una estructura modular orientada a la separación estricta de 
 
 ```
 Entregable02/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml            # Automatización CI/CD para GitHub Pages
 ├── public/
 │   ├── favicon.svg               # Ícono de portal Rick and Morty
 │   └── icons.svg

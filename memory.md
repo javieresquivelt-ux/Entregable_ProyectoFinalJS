@@ -12,8 +12,9 @@
     ```
   - **Causa raíz:** Los archivos Sass heredados en `src/scss/layout/_header.scss` y `_hero.scss` hacían referencia a assets decorativos de un proyecto previo que no existían en este repositorio.
   - **Solución técnica ejecutada:** Se eliminaron los partials obsoletos (`_categories.scss`, `_hero.scss`), se creó la nueva arquitectura de layout (`_container.scss`, `_header.scss`, `_controls.scss`, `_grid.scss`), y se reemplazó la función deprecada `lighten()` por el color hex directo. Compilación limpia al 100% sin warnings.
-- **Configuración de Despliegue (GitHub Pages):**
-  - Se confirmó `base: './'` en `vite.config.js` para rutas relativas adecuadas.
+- **Configuración de Despliegue y Control de Versiones:**
+  - Se confirmó `base: './'` en `vite.config.js` para rutas relativas adecuadas en GitHub Pages.
+  - Se inicializó el repositorio local Git y se vinculó exitosamente con el repositorio remoto: `https://github.com/javieresquivelt-ux/Entregable_ProyectoFinalJS.git` en la rama `main`.
 
 ---
 

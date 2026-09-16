@@ -2,8 +2,8 @@
 
 ## Estado General del Proyecto
 - **Proyecto:** Rick and Morty Explorer (Propuesta 4 - Conquer Blocks Proyecto Final JS)
-- **Fase Actual:** **Fase 2 - Servicio API y Renderizado Inicial de Personajes**
-- **Estado de Aprobación:** 🟡 **Fase 1 completada. Esperando confirmación explícita del usuario para iniciar la Fase 2**
+- **Fase Actual:** **Fase 3 - Búsqueda Reactiva y Filtros Combinados**
+- **Estado de Aprobación:** 🟡 **Fase 2 completada. Esperando confirmación explícita del usuario para iniciar la Fase 3**
 
 ---
 
@@ -15,45 +15,40 @@
 - [x] **1.3. Maquetación Semántica:** Creación de `index.html` con Header, Barra de búsqueda, selectores de estado y género, pestañas de navegación (Todos vs Favoritos), Grid para personajes, controles de paginación y diálogo `<dialog>` accesible.
 - [x] **1.4. Verificación de Compilación:** Validación con `npm run build` (0 errores, 0 advertencias).
 
+### [x] Fase 2: Servicio API y Renderizado Inicial de Personajes
+- [x] **2.1. Módulo del Servicio API (`src/js/services/api.js`):** Implementado `fetchCharacters` con `fetch` nativo, `async/await`, soporte para query params y manejo defensivo del 404 (transformado en un array vacío seguro).
+- [x] **2.2. Componente de Tarjeta (`src/js/components/CharacterCard.js`):** Función pura `renderCharacterCard` con badges de estado dinámicos (Vivo, Muerto, Desconocido), imagen lazy-loading, origen y botones de acción.
+- [x] **2.3. Componente de Estados Visuales (`src/js/components/StateFeedback.js`):** Generador del loader de portal animado, mensaje de error y mensaje de búsqueda sin vida detectada.
+- [x] **2.4. Orquestación Inicial en `src/main.js`:** Carga automática de la página 1 en `DOMContentLoaded`, inyección en el grid y actualización de la paginación base.
+- [x] **2.5. Verificación y Sincronización:** Pruebas unitarias de consumo y push al repositorio GitHub.
+
 ---
 
-## Detalle Específico de la Próxima Fase (Fase 2)
+## Detalle Específico de la Próxima Fase (Fase 3)
 
 ### Objetivo
-Construir la capa de acceso a datos conectando la API pública de Rick and Morty (`https://rickandmortyapi.com/api/character`), crear el componente visual de tarjeta reutilizable (`CharacterCard.js`) y orquestar el renderizado inicial en `main.js` con estados de carga (Loader Portal) y manejo de errores.
+Dotar de interactividad y dinamismo a la interfaz permitiendo a los usuarios buscar personajes por nombre en tiempo real mediante un patrón de optimización *debounce*, y filtrar simultáneamente por Estado (*Alive, Dead, Unknown*) y Género (*Female, Male, Genderless, Unknown*), reseteando la paginación a la página 1 en cada nueva búsqueda.
 
-### Subtareas de la Fase 2
-- [ ] **2.1. Módulo del Servicio API (`src/js/services/api.js`):**
-  - Implementar la función asíncrona `fetchCharacters({ page = 1, name = '', status = '', gender = '' })` utilizando `fetch` nativo y `async/await`.
-  - Construir dinámicamente los query params con `URLSearchParams`.
-  - Manejo de respuestas HTTP: validar `response.ok`, capturar errores de red y gestionar el caso cuando la API devuelve `404` ("There is nothing here") devolviendo un array vacío en lugar de romper la app.
-- [ ] **2.2. Componente de Tarjeta (`src/js/components/CharacterCard.js`):**
-  - Crear una función pura `renderCharacterCard(character, isFavorite)` que retorne el string HTML de la tarjeta semántica.
-  - Incluir badge de estado con su color correspondiente (*Alive*, *Dead*, *Unknown*).
-  - Incluir botón de favorito flotante con `data-id`.
-  - Incluir botón "Ver más detalles" con `data-id` para preparar la integración del modal.
-- [ ] **2.3. Componente de Estados Visuales (`src/js/components/StateFeedback.js`):**
-  - Función para renderizar el loader temático (portal giratorio animado).
-  - Función para renderizar mensaje de error amigable con botón de reintentar.
-- [ ] **2.4. Orquestación Inicial en `src/main.js`:**
-  - Importar estilos y módulos.
-  - Invocar `fetchCharacters` al cargar la aplicación.
-  - Renderizar las tarjetas en el `#characters-grid`.
-  - Actualizar el contador de páginas y habilitar/deshabilitar los botones del paginador según `info.next` e `info.prev`.
-- [ ] **2.5. Verificación y Pruebas:**
-  - Validar en consola y en el build (`npm run build`) que los datos lleguen correctamente y se muestren sin fallos.
+### Subtareas de la Fase 3
+- [ ] **3.1. Utilidad Debounce (`src/js/utils/debounce.js`):**
+  - Implementar una función debounce pura y educativa con explicaciones claras sobre timers (`setTimeout`/`clearTimeout`) para evitar ráfagas de peticiones mientras el usuario escribe.
+- [ ] **3.2. Conexión de Eventos en `src/main.js`:**
+  - Escuchar el evento `input` en `#search-input` envuelto con `debounce` (350ms).
+  - Escuchar el evento `change` en `#status-filter` y `#gender-filter`.
+  - Actualizar el objeto reactivo `state.filters` y disparar `loadCharacters(1)` (reiniciando siempre a la página 1).
+- [ ] **3.3. Experiencia de Usuario y Feedback:**
+  - Mostrar el loader animado mientras se resuelven las búsquedas.
+  - Renderizar el estado "Sin vida detectada" personalizado con el término buscado si no hay resultados.
+- [ ] **3.4. Verificación y Despliegue:**
+  - Validar build limpio y sincronizar con el repositorio en GitHub.
 
 ---
 
-### [ ] Fase 3: Búsqueda Reactiva y Filtros Combinados
-- [ ] Implementar función debounce en `src/js/utils/debounce.js`.
-- [ ] Conectar inputs y selects para filtrar dinámicamente personajes.
-
 ### [ ] Fase 4: Navegación y Paginación
-- [ ] Manejo interactivo de cambio de página preservando los filtros activos.
+- [ ] Conectar los botones Anterior/Siguiente para avanzar y retroceder entre páginas manteniendo los filtros activos.
 
 ### [ ] Fase 5: Modal de Detalle Extendido y Episodios
-- [ ] Diálogo modal accesible con fetch de episodios y datos adicionales.
+- [ ] Diálogo modal accesible con fetch de episodios y datos adicionales al hacer clic en "Ver detalles".
 
 ### [ ] Fase 6: Sistema de Favoritos con Persistencia (`localStorage`)
 - [ ] Persistencia de favoritos en `localStorage` y filtro exclusivo en pestaña Favoritos.

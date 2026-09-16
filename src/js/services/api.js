@@ -94,3 +94,41 @@ export async function fetchCharacterById(id) {
     return null;
   }
 }
+
+/**
+ * Consulta múltiples episodios en paralelo a partir de sus URLs.
+ * 
+ * Concepto pedagógico: Promise.all() ejecuta todas las promesas simultáneamente
+ * en lugar de esperar una por una. Para Rick Sanchez (51 episodios), esto reduce
+ * el tiempo de espera de ~20s (serie) a ~2s (paralelo).
+ * 
+ * Limitamos a los primeros 20 episodios para no sobrecargar la API pública.
+ * 
+ * @param {string[]} urls - Array de URLs de episodios del personaje
+ * @returns {Promise<Object[]>} Lista de objetos de episodio
+ */
+export async function fetchEpisodesByUrls(urls = []) {
+  try {
+    // Limitamos a los primeros 20 episodios para evitar sobrecarga de la API pública
+    const limitedUrls = urls.slice(0, 20);
+
+    // Promise.all() ejecuta todas las peticiones en paralelo
+    // Si cualquiera falla, el catch de abajo lo gestiona sin romper la app
+    const responses = await Promise.all(
+      limitedUrls.map(url => fetch(url))
+    );
+
+    // Parseamos el JSON de cada respuesta también en paralelo
+    const episodes = await Promise.all(
+      responses
+        .filter(res => res.ok) // Descartamos silenciosamente las respuestas fallidas
+        .map(res => res.json())
+    );
+
+    return episodes;
+  } catch (error) {
+    console.error('[API Service Error] Fallo al consultar episodios:', error);
+    return [];
+  }
+}
+

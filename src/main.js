@@ -10,22 +10,21 @@
  * 4. Gestionar la búsqueda reactiva con el patrón Debounce.
  * 5. Gestionar el filtrado combinado por Estado y Género.
  * 6. Navegación dinámica por páginas conservando todos los filtros activos.
- * 7. Actualizar dinámicamente los componentes visuales de la interfaz.
+ * 7. Abrir y cerrar el modal de detalle extendido usando Event Delegation.
  */
 
 // Importación de los estilos globales (Sass)
 import './scss/app.scss';
 
 // Importación de servicios, componentes modulares y utilidades
-import { fetchCharacters } from './js/services/api.js';
+import { fetchCharacters, fetchEpisodesByUrls } from './js/services/api.js';
 import { renderCharacterCard } from './js/components/CharacterCard.js';
 import { renderLoader, renderError, renderEmpty } from './js/components/StateFeedback.js';
 import { debounce } from './js/utils/debounce.js';
+import { openModal, initModalListeners } from './js/components/Modal.js';
 
 /**
  * Estado reactivo centralizado de la aplicación (Single Source of Truth).
- * Centraliza toda la información que describe la vista actual para garantizar
- * que cada petición a la API siempre esté sincronizada con la UI.
  */
 const state = {
   currentPage: 1,
@@ -56,8 +55,6 @@ const DOM = {
 
 /**
  * Actualiza la barra de paginación según el estado actual de la consulta.
- * Deshabilita los botones de navegación en los extremos (página 1 y última)
- * o mientras una petición de red está en progreso.
  */
 function updatePaginationUI() {
   if (DOM.pageInfo) {
@@ -65,12 +62,10 @@ function updatePaginationUI() {
     DOM.pageInfo.innerHTML = `Página <span class="current-page">${state.currentPage}</span> de ${total}`;
   }
 
-  // Deshabilitamos el botón Anterior si estamos en la primera página o cargando
   if (DOM.prevBtn) {
     DOM.prevBtn.disabled = state.currentPage <= 1 || state.isLoading || state.totalPages <= 1;
   }
 
-  // Deshabilitamos el botón Siguiente si estamos en la última página o cargando
   if (DOM.nextBtn) {
     DOM.nextBtn.disabled = state.currentPage >= state.totalPages || state.isLoading || state.totalPages <= 1;
   }
@@ -78,8 +73,6 @@ function updatePaginationUI() {
 
 /**
  * Desplaza la vista suavemente hacia el inicio del grid de personajes.
- * Se invoca cada vez que se carga una nueva página de resultados, para evitar
- * que el usuario tenga que hacer scroll manual hacia arriba.
  */
 function scrollToGrid() {
   if (DOM.grid) {
@@ -90,25 +83,20 @@ function scrollToGrid() {
 
 /**
  * Consulta la API y renderiza el listado de personajes según el estado y filtros actuales.
- * 
+ *
  * @param {number} [page=1] - Página que se desea cargar
  */
 export async function loadCharacters(page = 1) {
-  // Prevenimos peticiones concurrentes: si ya hay una carga activa, ignoramos
   if (state.isLoading) return;
 
   state.isLoading = true;
   state.currentPage = page;
   updatePaginationUI();
 
-  // Renderizamos el estado de carga animado del portal
   if (DOM.grid) {
     DOM.grid.innerHTML = renderLoader();
   }
 
-  // Petición al servicio de la API con los filtros unificados.
-  // Clave pedagógica: los filtros activos se pasan siempre juntos en la misma
-  // petición, garantizando que la API los combine correctamente.
   const response = await fetchCharacters({
     page: state.currentPage,
     name: state.filters.name,
@@ -132,7 +120,7 @@ export async function loadCharacters(page = 1) {
     return;
   }
 
-  // 2. Manejo de resultado vacío (sin coincidencias para los filtros aplicados)
+  // 2. Manejo de resultado vacío
   if (response.isEmpty || !response.results || response.results.length === 0) {
     state.characters = [];
     state.totalPages = 0;
@@ -158,13 +146,11 @@ export async function loadCharacters(page = 1) {
 }
 
 /**
- * Configura los escuchadores de eventos de la interfaz.
- * Agrupa búsqueda, filtros y controles de paginación.
+ * Configura todos los escuchadores de eventos de la interfaz.
+ * Incluye búsqueda, filtros, paginación y apertura del modal.
  */
 function initEventListeners() {
   // ─── Búsqueda Reactiva (Debounce 350ms) ──────────────────────────────────
-  // El patrón Debounce evita enviar una petición por cada pulsación de tecla.
-  // Solo ejecuta la búsqueda cuando el usuario se detiene 350ms.
   if (DOM.searchInput) {
     DOM.searchInput.addEventListener(
       'input',
@@ -172,7 +158,6 @@ function initEventListeners() {
         const query = event.target.value.trim();
         if (state.filters.name !== query) {
           state.filters.name = query;
-          // Importante: toda búsqueda nueva reinicia la paginación a la página 1.
           loadCharacters(1);
         }
       }, 350)
@@ -196,10 +181,6 @@ function initEventListeners() {
   }
 
   // ─── Paginación: Página Anterior ──────────────────────────────────────────
-  // Navega a la página anterior preservando todos los filtros activos.
-  // La validación de límites se realiza en updatePaginationUI() mediante
-  // el atributo `disabled` del botón, pero añadimos una guarda adicional
-  // en caso de activación programática.
   if (DOM.prevBtn) {
     DOM.prevBtn.addEventListener('click', () => {
       const previousPage = state.currentPage - 1;
@@ -210,9 +191,6 @@ function initEventListeners() {
   }
 
   // ─── Paginación: Página Siguiente ─────────────────────────────────────────
-  // Navega a la página siguiente conservando el estado de filtros y búsqueda.
-  // La API de Rick and Morty limita a 42 páginas en el catálogo general y
-  // menos para búsquedas filtradas, por lo que verificamos `totalPages`.
   if (DOM.nextBtn) {
     DOM.nextBtn.addEventListener('click', () => {
       const nextPage = state.currentPage + 1;
@@ -221,6 +199,31 @@ function initEventListeners() {
       }
     });
   }
+
+  // ─── Event Delegation: Apertura del Modal ─────────────────────────────────
+  // En lugar de asignar un listener por cada botón "Ver detalles" (hasta 20 por página),
+  // escuchamos clics en el contenedor padre. El evento burbujea (event bubbling) hasta
+  // aquí y verificamos si el clic provino de un botón con data-action="view-details".
+  if (DOM.grid) {
+    DOM.grid.addEventListener('click', async (event) => {
+      const detailBtn = event.target.closest('[data-action="view-details"]');
+
+      if (detailBtn) {
+        const characterId = parseInt(detailBtn.dataset.id, 10);
+        // Buscamos el personaje en el estado local (ya disponible, sin petición adicional)
+        const character = state.characters.find(c => c.id === characterId);
+
+        if (character) {
+          // Abrimos el modal e inyectamos fetchEpisodesByUrls como dependencia
+          // Esto facilita pruebas y sigue el patrón de Inversión de Dependencias
+          await openModal(character, fetchEpisodesByUrls);
+        }
+      }
+    });
+  }
+
+  // ─── Listeners del Modal (cierre) ─────────────────────────────────────────
+  initModalListeners();
 }
 
 /**

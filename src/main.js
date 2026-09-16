@@ -10,27 +10,36 @@
  * 4. Gestionar la búsqueda reactiva con el patrón Debounce.
  * 5. Gestionar el filtrado combinado por Estado y Género.
  * 6. Navegación dinámica por páginas conservando todos los filtros activos.
- * 7. Abrir y cerrar el modal de detalle extendido usando Event Delegation.
+ * 7. Abrir y cerrar el modal de detalle con episodios paralelos.
+ * 8. Gestionar favoritos con persistencia en localStorage y vista exclusiva.
  */
 
 // Importación de los estilos globales (Sass)
 import './scss/app.scss';
 
-// Importación de servicios, componentes modulares y utilidades
+// Importación de servicios, componentes y utilidades
 import { fetchCharacters, fetchEpisodesByUrls } from './js/services/api.js';
 import { renderCharacterCard } from './js/components/CharacterCard.js';
 import { renderLoader, renderError, renderEmpty } from './js/components/StateFeedback.js';
 import { debounce } from './js/utils/debounce.js';
 import { openModal, initModalListeners } from './js/components/Modal.js';
+import {
+  toggleFavorite,
+  isFavorite,
+  getFavoritesCount,
+  getFavoritesArray
+} from './js/services/favorites.js';
 
 /**
- * Estado reactivo centralizado de la aplicación (Single Source of Truth).
+ * Estado reactivo centralizado.
+ * `activeTab` controla si se muestra el catálogo general ('all') o solo favoritos ('favs').
  */
 const state = {
   currentPage: 1,
   totalPages: 1,
   characters: [],
   isLoading: false,
+  activeTab: 'all',   // 'all' | 'favs'
   filters: {
     name: '',
     status: '',
@@ -39,8 +48,7 @@ const state = {
 };
 
 /**
- * Referencias en caché a los elementos del DOM.
- * Evita búsquedas repetitivas en el árbol del documento (Reflows/Repaints).
+ * Referencias cacheadas a los elementos del DOM.
  */
 const DOM = {
   grid: document.getElementById('characters-grid'),
@@ -50,13 +58,28 @@ const DOM = {
   paginationControls: document.getElementById('pagination-controls'),
   searchInput: document.getElementById('search-input'),
   statusFilter: document.getElementById('status-filter'),
-  genderFilter: document.getElementById('gender-filter')
+  genderFilter: document.getElementById('gender-filter'),
+  tabAll: document.getElementById('tab-all'),
+  tabFavs: document.getElementById('tab-favs'),
+  favCount: document.getElementById('fav-count')
 };
 
+// ============================================================================
+// UTILIDADES DE UI
+// ============================================================================
+
 /**
- * Actualiza la barra de paginación según el estado actual de la consulta.
+ * Actualiza el indicador de página y el estado habilitado/deshabilitado
+ * de los botones de navegación.
  */
 function updatePaginationUI() {
+  const isVisible = state.activeTab === 'all' && state.totalPages > 1;
+
+  if (DOM.paginationControls) {
+    // Ocultamos la paginación cuando se está en la vista de Favoritos
+    DOM.paginationControls.style.visibility = isVisible ? 'visible' : 'hidden';
+  }
+
   if (DOM.pageInfo) {
     const total = state.totalPages > 0 ? state.totalPages : 1;
     DOM.pageInfo.innerHTML = `Página <span class="current-page">${state.currentPage}</span> de ${total}`;
@@ -72,7 +95,25 @@ function updatePaginationUI() {
 }
 
 /**
- * Desplaza la vista suavemente hacia el inicio del grid de personajes.
+ * Actualiza el contador de favoritos en la pestaña y el estado visual de las pestañas.
+ */
+function updateTabsUI() {
+  const count = getFavoritesCount();
+  if (DOM.favCount) DOM.favCount.textContent = count;
+
+  if (DOM.tabAll) {
+    DOM.tabAll.classList.toggle('tab-btn--active', state.activeTab === 'all');
+    DOM.tabAll.setAttribute('aria-selected', state.activeTab === 'all');
+  }
+
+  if (DOM.tabFavs) {
+    DOM.tabFavs.classList.toggle('tab-btn--active', state.activeTab === 'favs');
+    DOM.tabFavs.setAttribute('aria-selected', state.activeTab === 'favs');
+  }
+}
+
+/**
+ * Desplaza la vista suavemente al inicio del grid de personajes.
  */
 function scrollToGrid() {
   if (DOM.grid) {
@@ -81,10 +122,15 @@ function scrollToGrid() {
   }
 }
 
+// ============================================================================
+// CARGA Y RENDERIZADO DE PERSONAJES
+// ============================================================================
+
 /**
- * Consulta la API y renderiza el listado de personajes según el estado y filtros actuales.
+ * Consulta la API y renderiza personajes según los filtros y la página activa.
+ * Bloqueada si ya hay una carga en progreso (guarda anti-concurrencia).
  *
- * @param {number} [page=1] - Página que se desea cargar
+ * @param {number} [page=1] - Número de página a cargar
  */
 export async function loadCharacters(page = 1) {
   if (state.isLoading) return;
@@ -93,9 +139,7 @@ export async function loadCharacters(page = 1) {
   state.currentPage = page;
   updatePaginationUI();
 
-  if (DOM.grid) {
-    DOM.grid.innerHTML = renderLoader();
-  }
+  if (DOM.grid) DOM.grid.innerHTML = renderLoader();
 
   const response = await fetchCharacters({
     page: state.currentPage,
@@ -106,38 +150,31 @@ export async function loadCharacters(page = 1) {
 
   state.isLoading = false;
 
-  // 1. Manejo de error de red o de servidor
   if (response.error) {
     if (DOM.grid) {
       DOM.grid.innerHTML = renderError(response.error);
-      const retryBtn = document.getElementById('retry-btn');
-      if (retryBtn) {
-        retryBtn.addEventListener('click', () => loadCharacters(state.currentPage));
-      }
+      document.getElementById('retry-btn')?.addEventListener('click', () => loadCharacters(state.currentPage));
     }
     state.totalPages = 0;
     updatePaginationUI();
     return;
   }
 
-  // 2. Manejo de resultado vacío
-  if (response.isEmpty || !response.results || response.results.length === 0) {
+  if (response.isEmpty || !response.results?.length) {
     state.characters = [];
     state.totalPages = 0;
-    if (DOM.grid) {
-      DOM.grid.innerHTML = renderEmpty(state.filters.name);
-    }
+    if (DOM.grid) DOM.grid.innerHTML = renderEmpty(state.filters.name);
     updatePaginationUI();
     return;
   }
 
-  // 3. Renderizado exitoso de personajes
   state.characters = response.results;
   state.totalPages = response.info?.pages || 1;
 
   if (DOM.grid) {
+    // Pasamos el estado de favorito actual a cada tarjeta al renderizar
     DOM.grid.innerHTML = state.characters
-      .map(character => renderCharacterCard(character, false))
+      .map(character => renderCharacterCard(character, isFavorite(character.id)))
       .join('');
   }
 
@@ -146,11 +183,44 @@ export async function loadCharacters(page = 1) {
 }
 
 /**
- * Configura todos los escuchadores de eventos de la interfaz.
- * Incluye búsqueda, filtros, paginación y apertura del modal.
+ * Renderiza la vista exclusiva de favoritos desde el localStorage.
+ * No realiza ninguna petición a la API.
+ */
+function renderFavoritesView() {
+  const favorites = getFavoritesArray();
+
+  if (DOM.grid) {
+    if (favorites.length === 0) {
+      DOM.grid.innerHTML = `
+        <div class="status-feedback" role="status">
+          <span class="status-feedback__icon" aria-hidden="true">⭐</span>
+          <h3 class="status-feedback__title">Sin favoritos aún</h3>
+          <p class="status-feedback__desc">
+            Marca personajes con ⭐ desde el catálogo para verlos aquí.
+          </p>
+        </div>
+      `;
+    } else {
+      // Todos los personajes de esta vista son favoritos, por eso isFavorite = true
+      DOM.grid.innerHTML = favorites
+        .map(character => renderCharacterCard(character, true))
+        .join('');
+    }
+  }
+
+  // En la vista de favoritos, ocultamos la paginación
+  updatePaginationUI();
+}
+
+// ============================================================================
+// EVENTOS
+// ============================================================================
+
+/**
+ * Registra todos los escuchadores de eventos de la interfaz.
  */
 function initEventListeners() {
-  // ─── Búsqueda Reactiva (Debounce 350ms) ──────────────────────────────────
+  // ─── Búsqueda con Debounce ────────────────────────────────────────────────
   if (DOM.searchInput) {
     DOM.searchInput.addEventListener(
       'input',
@@ -158,65 +228,107 @@ function initEventListeners() {
         const query = event.target.value.trim();
         if (state.filters.name !== query) {
           state.filters.name = query;
-          loadCharacters(1);
+          // Si se busca desde la pestaña de favoritos, volvemos a "Todos"
+          if (state.activeTab === 'favs') switchTab('all');
+          else loadCharacters(1);
         }
       }, 350)
     );
   }
 
-  // ─── Filtro por Estado (Alive / Dead / Unknown) ───────────────────────────
+  // ─── Filtro por Estado ────────────────────────────────────────────────────
   if (DOM.statusFilter) {
     DOM.statusFilter.addEventListener('change', (event) => {
       state.filters.status = event.target.value;
-      loadCharacters(1);
+      if (state.activeTab === 'favs') switchTab('all');
+      else loadCharacters(1);
     });
   }
 
-  // ─── Filtro por Género (Female / Male / Genderless / Unknown) ────────────
+  // ─── Filtro por Género ────────────────────────────────────────────────────
   if (DOM.genderFilter) {
     DOM.genderFilter.addEventListener('change', (event) => {
       state.filters.gender = event.target.value;
-      loadCharacters(1);
+      if (state.activeTab === 'favs') switchTab('all');
+      else loadCharacters(1);
     });
   }
 
-  // ─── Paginación: Página Anterior ──────────────────────────────────────────
+  // ─── Paginación: Anterior ─────────────────────────────────────────────────
   if (DOM.prevBtn) {
     DOM.prevBtn.addEventListener('click', () => {
-      const previousPage = state.currentPage - 1;
-      if (previousPage >= 1 && !state.isLoading) {
-        loadCharacters(previousPage);
-      }
+      const prev = state.currentPage - 1;
+      if (prev >= 1 && !state.isLoading) loadCharacters(prev);
     });
   }
 
-  // ─── Paginación: Página Siguiente ─────────────────────────────────────────
+  // ─── Paginación: Siguiente ────────────────────────────────────────────────
   if (DOM.nextBtn) {
     DOM.nextBtn.addEventListener('click', () => {
-      const nextPage = state.currentPage + 1;
-      if (nextPage <= state.totalPages && !state.isLoading) {
-        loadCharacters(nextPage);
-      }
+      const next = state.currentPage + 1;
+      if (next <= state.totalPages && !state.isLoading) loadCharacters(next);
     });
   }
 
-  // ─── Event Delegation: Apertura del Modal ─────────────────────────────────
-  // En lugar de asignar un listener por cada botón "Ver detalles" (hasta 20 por página),
-  // escuchamos clics en el contenedor padre. El evento burbujea (event bubbling) hasta
-  // aquí y verificamos si el clic provino de un botón con data-action="view-details".
+  // ─── Pestañas: Todos / Favoritos ──────────────────────────────────────────
+  DOM.tabAll?.addEventListener('click', () => switchTab('all'));
+  DOM.tabFavs?.addEventListener('click', () => switchTab('favs'));
+
+  // ─── Event Delegation: Grid de Personajes ─────────────────────────────────
+  // Un único listener maneja tanto "Ver detalles" como "Toggle Favorito"
   if (DOM.grid) {
     DOM.grid.addEventListener('click', async (event) => {
+      // 1. Botón de Ver Detalles → abre el modal
       const detailBtn = event.target.closest('[data-action="view-details"]');
-
       if (detailBtn) {
         const characterId = parseInt(detailBtn.dataset.id, 10);
-        // Buscamos el personaje en el estado local (ya disponible, sin petición adicional)
-        const character = state.characters.find(c => c.id === characterId);
+        // Buscamos el personaje en el estado local (vista 'all') o en favoritos (vista 'favs')
+        const character =
+          state.characters.find(c => c.id === characterId) ||
+          getFavoritesArray().find(c => c.id === characterId);
 
         if (character) {
-          // Abrimos el modal e inyectamos fetchEpisodesByUrls como dependencia
-          // Esto facilita pruebas y sigue el patrón de Inversión de Dependencias
           await openModal(character, fetchEpisodesByUrls);
+        }
+        return;
+      }
+
+      // 2. Botón de Favorito → toggle sin re-render del grid completo
+      const favBtn = event.target.closest('[data-action="toggle-favorite"]');
+      if (favBtn) {
+        const characterId = parseInt(favBtn.dataset.id, 10);
+        const character =
+          state.characters.find(c => c.id === characterId) ||
+          getFavoritesArray().find(c => c.id === characterId);
+
+        if (character) {
+          const nowFavorite = toggleFavorite(character);
+
+          // Actualización quirúrgica: solo actualizamos el botón afectado,
+          // sin re-renderizar todo el grid (evita parpadeos y pérdida de scroll)
+          favBtn.classList.toggle('is-favorite', nowFavorite);
+          favBtn.setAttribute(
+            'aria-label',
+            nowFavorite ? `Quitar a ${character.name} de favoritos` : `Agregar a ${character.name} a favoritos`
+          );
+
+          // Si estamos en la vista de favoritos y desmarcamos, quitamos la tarjeta
+          if (state.activeTab === 'favs' && !nowFavorite) {
+            const card = DOM.grid.querySelector(`[data-card-id="${characterId}"]`);
+            if (card) {
+              card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+              card.style.opacity = '0';
+              card.style.transform = 'scale(0.95)';
+              setTimeout(() => {
+                card.remove();
+                // Si ya no quedan favoritos, mostramos el estado vacío
+                if (getFavoritesCount() === 0) renderFavoritesView();
+              }, 300);
+            }
+          }
+
+          // Actualizamos el contador en la pestaña
+          updateTabsUI();
         }
       }
     });
@@ -226,11 +338,34 @@ function initEventListeners() {
   initModalListeners();
 }
 
+// ============================================================================
+// CONTROL DE PESTAÑAS
+// ============================================================================
+
 /**
- * Inicialización al cargar la aplicación en el navegador.
+ * Cambia la pestaña activa entre el catálogo general y la vista de favoritos.
+ *
+ * @param {'all' | 'favs'} tab - La pestaña destino
  */
+function switchTab(tab) {
+  state.activeTab = tab;
+  updateTabsUI();
+
+  if (tab === 'favs') {
+    renderFavoritesView();
+  } else {
+    // Volvemos a cargar el catálogo con los filtros actuales desde la página actual
+    loadCharacters(state.currentPage);
+  }
+}
+
+// ============================================================================
+// INICIALIZACIÓN
+// ============================================================================
+
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🧪 [Rick & Morty Explorer] Inicializando aplicación...');
+  updateTabsUI();     // Muestra el contador de favoritos persistidos al cargar
   initEventListeners();
   loadCharacters(1);
 });

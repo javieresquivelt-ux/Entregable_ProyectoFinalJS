@@ -52,32 +52,42 @@
 
 ---
 
-### 6. Razonamiento Técnico para la Fase 6: Favoritos con `localStorage`
+---
 
-#### A. Estructura de Datos en `localStorage`
-- **Clave de almacenamiento:** `rmx_favorites` (prefijo `rmx` para evitar colisiones con otras apps).
-- **Formato:** JSON serializado de un arreglo de objetos de personaje completos `character[]`.
-  - Ventaja: Al mostrar la vista de favoritos, no necesitamos hacer peticiones adicionales a la API; los datos ya están disponibles localmente.
-  - Desventaja a considerar: Los datos del personaje pueden desactualizarse si la API los modifica (es aceptable para este proyecto educativo).
-- **Estructura interna del servicio:** Trabajamos con un `Map<id, character>` en memoria para operaciones O(1) de búsqueda/existencia, y serializamos a array solo al guardar en localStorage.
+### 6. Fase 6: Sistema de Favoritos con `localStorage` (Completada)
 
-#### B. Actualización Quirúrgica de la UI (sin re-render total)
-- Al hacer clic en el botón ⭐ de una tarjeta, NO volvemos a renderizar todo el grid (lo cual provocaría pérdida de posición de scroll y parpadeos).
-- En cambio, actualizamos únicamente el botón afectado en el DOM:
-  ```javascript
-  const btn = document.querySelector(`[data-action="toggle-favorite"][data-id="${id}"]`);
-  btn.classList.toggle('is-favorite', isFavorite(id));
-  ```
-- El contador de la pestaña (`#fav-count`) también se actualiza de forma puntual.
+**Decisiones técnicas aplicadas:**
 
-#### C. Vista Exclusiva de Favoritos
-- La pestaña "Favoritos" no realiza peticiones a la API; lee directamente el `localStorage` y renderiza las tarjetas con `renderCharacterCard(character, true)`.
-- Si el usuario no tiene favoritos guardados, se muestra el componente `renderEmpty` con un mensaje temático.
-- Al volver a la pestaña "Todos", se restaura la última búsqueda con `loadCharacters(state.currentPage)`.
+1. **Estructura de Datos en `localStorage`:**
+   - Clave: `rmx_favorites`
+   - Se guardan los objetos de los personajes completos (`character[]`) y al cargar en memoria se convierten a un `Map<id, character>` para operaciones $O(1)$.
+   - Si el JSON almacenado está corrupto, se descarta para evitar bloqueos (`try/catch`).
+
+2. **Actualización Quirúrgica (Sin Re-render Total):**
+   - Event Delegation en `#characters-grid`.
+   - Cuando se da click en ⭐, solo se togglea la clase `.is-favorite` y el atributo `aria-label` en *ese* botón específico, previniendo así un parpadeo (reflow) y pérdida de scroll que habría causado rehacer `grid.innerHTML`.
+   - En la vista de favoritos, las tarjetas desmarcadas hacen una pequeña transición (scale y opacity) antes de eliminarse del DOM usando `setTimeout`.
+
+3. **Arquitectura de Pestañas (Tabs):**
+   - Una única fuente de verdad en `state.activeTab` ('all' o 'favs').
+   - `renderFavoritesView()` toma los datos directamente de `localStorage` sin llamar a la API de Rick and Morty.
+   - Si se busca un personaje o se cambia un filtro desde la pestaña "Favoritos", el sistema hace auto-switch a "Todos" para buscar de nuevo en la API, protegiendo la usabilidad.
+
+**Resultados de Pruebas:**
+- El contador se actualiza en tiempo real en la pestaña.
+- Persistencia demostrada. Build exitoso (`npm run build` en 340ms).
 
 ---
 
-### 7. Estado Actual
-- **Fase 5 completada y sincronizada en GitHub.**
-- **Plan de la Fase 6 detallado en `task.md`.**
-- **En pausa a la espera de la confirmación explícita del usuario para iniciar la Fase 6.**
+### 7. Razonamiento Técnico para la Fase 7: Pulido Final y Despliegue
+
+- **Revisión Final de Accesibilidad:** Se debe comprobar el correcto uso de `aria-label`, contraste, estados `:focus-visible`.
+- **Explicaciones didácticas:** El proyecto está enfocado en la educación. Todos los patrones, como funciones puras, inyección de dependencias (`Modal.js`), delegación de eventos (`main.js`), debounce (`debounce.js`), y uso de APIs nativas (`<dialog>`, `Promise.all()`, `localStorage`) tienen sus comentarios respectivos.
+- **Despliegue:** Se verificará que `vite.config.js` tenga `base: './'` de forma correcta y limpia para que las rutas relativas en GitHub Pages no den errores 404 al buscar CSS o JS.
+
+---
+
+### 8. Estado Actual
+- **Fase 6 completada y sincronizada en GitHub.**
+- **Plan de la Fase 7 detallado en `task.md`.**
+- **En pausa a la espera de la confirmación explícita del usuario para iniciar la Fase 7.**

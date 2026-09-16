@@ -2,8 +2,8 @@
 
 ## Estado General del Proyecto
 - **Proyecto:** Rick and Morty Explorer (Propuesta 4 - Conquer Blocks Proyecto Final JS)
-- **Fase Actual:** **Fase 6 - Sistema de Favoritos con Persistencia (`localStorage`)**
-- **Estado de Aprobación:** 🟡 **Fase 5 completada. Esperando confirmación explícita del usuario para iniciar la Fase 6**
+- **Fase Actual:** **Fase 7 - Pulido Final, Documentación Didáctica y Despliegue**
+- **Estado de Aprobación:** 🟡 **Fase 6 completada. Esperando confirmación explícita del usuario para iniciar la Fase 7**
 
 ---
 
@@ -33,32 +33,28 @@
 
 ---
 
-## Detalle Específico de la Próxima Fase (Fase 6)
-
-### Objetivo
-Implementar un sistema completo de favoritos que permita al usuario marcar y desmarcar personajes desde la tarjeta y desde el modal de detalle, con persistencia en `localStorage`, y visualizar exclusivamente los personajes marcados al activar la pestaña "Favoritos".
-
-### Subtareas de la Fase 6
-- [ ] **6.1. Módulo de Favoritos (`src/js/services/favorites.js`):**
-  - `getFavorites()` → Lee y parsea el JSON del localStorage (clave: `rmx_favorites`). Retorna `Map<id, character>`.
-  - `toggleFavorite(character)` → Añade o elimina el personaje del Map y guarda de vuelta en localStorage.
-  - `isFavorite(id)` → Retorna `true/false` sin efectos secundarios.
-  - `getFavoritesCount()` → Retorna el número de favoritos para actualizar el contador en la pestaña.
-- [ ] **6.2. Integración Visual en `CharacterCard.js`:**
-  - Actualizar `renderCharacterCard(character, isFavorite)` para que el botón ⭐ reciba la clase `is-favorite` cuando corresponda.
-- [ ] **6.3. Event Delegation para el Botón de Favorito:**
-  - Detectar clics en `[data-action="toggle-favorite"]` dentro del grid mediante el listener ya existente en `#characters-grid`.
-  - Llamar a `toggleFavorite()`, actualizar visualmente solo el botón afectado (sin re-renderizar todo el grid) y actualizar el contador de la pestaña.
-- [ ] **6.4. Pestaña "Favoritos" en `main.js`:**
-  - Vincular eventos de clic en `#tab-all` y `#tab-favs`.
-  - En modo "Favoritos": renderizar las tarjetas guardadas en localStorage sin petición a la API, con mensaje de estado vacío si no hay ninguno.
-  - En modo "Todos": restaurar la vista de personajes paginados con los filtros actuales.
-- [ ] **6.5. Verificación y Despliegue:**
-  - Probar persistencia al recargar la página.
-  - Validar counter de favoritos en la pestaña.
-  - Build limpio y push a GitHub.
+### [x] Fase 6: Sistema de Favoritos con Persistencia (`localStorage`)
+- [x] **6.1. Módulo de Favoritos (`src/js/services/favorites.js`):** Implementado con `localStorage` (clave `rmx_favorites`) y parseo defensivo.
+- [x] **6.2. Integración Visual:** `CharacterCard.js` recibe estado de favorito y renderiza el botón modificado.
+- [x] **6.3. Event Delegation:** `toggleFavorite` en `main.js` actualiza visualmente solo el botón sin re-renderizar todo el grid.
+- [x] **6.4. Pestaña "Favoritos":** Renderiza tarjetas locales sin peticiones a la API; maneja estado vacío de favoritos.
+- [x] **6.5. Verificación:** Persistencia recargando la página OK; counter funcional OK.
 
 ---
 
-### [ ] Fase 7: Pulido Final, Documentación Didáctica y Despliegue
-- [ ] Revisión exhaustiva de comentarios pedagógicos y checklist de GitHub Pages.
+## Detalle Específico de la Próxima Fase (Fase 7)
+
+### Objetivo
+Realizar el pulido final de la aplicación, asegurar que los comentarios pedagógicos son de alta calidad, y configurar lo necesario para un despliegue exitoso (como comprobar rutas relativas para GitHub Pages).
+
+### Subtareas de la Fase 7
+- [ ] **7.1. Revisión de Accesibilidad y Semántica:**
+  - Comprobar contrastes de color, focus states y uso correcto de etiquetas ARIA y semánticas.
+- [ ] **7.2. Documentación Pedagógica:**
+  - Asegurar que los comentarios en el código explican el *porqué* de las decisiones (patrones puros, debounce, event delegation, web APIs nativas, local storage).
+- [ ] **7.3. Optimización para Producción:**
+  - Validar `vite.config.js` (`base: './'`).
+  - Correr `npm run build` y asegurar que no hay warnings o errores.
+- [ ] **7.4. Despliegue en GitHub:**
+  - Confirmar que la rama main está lista.
+  - Asegurar que se puede usar en GitHub Pages.
